@@ -105,6 +105,16 @@ const upsertUserImage = (request, response) => {
     
 }
 
+
+const getUserImageByID = (request, response) => {
+  const id = request.params.id;
+    db.pool.query('SELECT * FROM user_images WHERE user_id = $1', [id])
+    .then(results => {
+      response.status(200).json(results.rows)
+      console.log('Got user image path by id')
+    }).catch(error => console.log(error));
+}
+
 module.exports = {
    getArtistByID,
    addFollower,
@@ -112,5 +122,6 @@ module.exports = {
    getFollowedByFollowerID,
    uploadImage,
    upsertUserImage,
+   getUserImageByID,
    deleteFollowing
 }

@@ -65,6 +65,7 @@ app.get('/artist/:id', artist.getArtistByID);
 app.get('/artist/:id', artist.getArtistByID);
 app.get('/following/:id', artist.getFollowingByUserId);
 app.get('/follows/:id', artist.getFollowedByFollowerID);
+app.get('/user/:id', artist.getUserImageByID);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
 // app.get('/albums/:id/songs', apiCall.selectSongs);
