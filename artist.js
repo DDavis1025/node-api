@@ -4,7 +4,7 @@ var path = require('path');
 
 const getArtistByID = (request, response) => {
 	const id = request.params.id;
-    db.pool.query('SELECT * FROM albums JOIN file ON albums.id = file.album_id WHERE author = $1', [id])
+    db.pool.query('SELECT * FROM albums JOIN file ON albums.id = file.album_id WHERE author = $1 ORDER BY time_added DESC', [id])
     .then(results => {
       response.status(200).json(results.rows)
       console.log('+ SELECT for artists')

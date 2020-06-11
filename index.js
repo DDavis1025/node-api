@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 const app = express();
 const db = require('./queries');
 const album = require('./albums');
@@ -7,7 +8,8 @@ const image = require('./image-upload');
 const apiCall = require('./test');
 const artist = require('./artist')
 const query = require('./query');
-const cors = require('cors');
+const video = require('./video');
+const track = require('./track');
 const port = 8000;
 var multer = require('multer');
 
@@ -26,21 +28,26 @@ var upload = multer({ storage: storage }).fields([{
            name: 'file', maxCount: 1
          }, {
            name: 'songs', maxCount: 30
+         }, {
+           name: 'video', maxCount: 1
+         }, {
+           name: 'track', maxCount: 1
          }]);
 
 app.use(bodyParser.urlencoded({extended: true}));
-
-app.use('/public', express.static('public'));
-
 
 app.use(bodyParser.json())
 
 app.use(cors());
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE'); 
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header('Access-Control-Allow-Credentials', true);
   next();
 });
+
+app.use('/public', express.static('public'));
 
 app.get('/', (request, response) => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
@@ -62,26 +69,40 @@ app.get('/songs/:id', db.getSongById);
 app.get('/albums', query.getAll);
 app.get('/albums/:id', query.getAllByID);
 app.get('/artist/:id', artist.getArtistByID);
-app.get('/artist/:id', artist.getArtistByID);
 app.get('/following/:id', artist.getFollowingByUserId);
 app.get('/follows/:id', artist.getFollowedByFollowerID);
 app.get('/user/:id', artist.getUserImageByID);
+app.get('/video/:id', video.getVideoByID);
+app.get('/track/:id', track.getTrackByID);
+app.get('/artist/video/:id', video.videoByArtistID);
+app.get('/artist/track/:id', track.trackByArtistID);
+app.get('/videos', video.getAllVideos);
+app.get('/video_path/:id', video.getVideoPathByID);
+app.get('/tracks', track.getAllTracks);
+app.get('/trackAndImage/:id', track.trackPathAndImageByID);
+// app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
 // app.get('/albums/:id/songs', apiCall.selectSongs);
 // app.post('/albums/', apiCall.addData);
-app.post('/albums/:id', upload, apiCall.upsertAlbum)
-app.put('/albums/:id', upload, apiCall.upsertAlbum)
+app.post('/albums/:id', upload, apiCall.upsertAlbum);
+app.put('/albums/:id', upload, apiCall.upsertAlbum);
+app.put('/video/:id', upload, video.updateVideoByID);
+app.put('/track/:id', upload, track.updateTrackByID);
 // app.delete('/albums/:id', album.deleteAlbum)
 
 // app.get('/albums/:id/images', image.getImageByAlbumId)
 app.post('/albums', upload, apiCall.addData);
+app.post('/video', upload, video.addData);
+app.post('/track', upload, track.addData);
 // app.post('/upload', image.upsertImage);
 
 // app.put('/albums', apiCall.addData);
 app.delete('/albums/:id/songs', apiCall.deleteSongs);
 app.delete('/albums/:id/', apiCall.deleteAll);
 app.delete('/following/:id', artist.deleteFollowing);
+app.delete('/video/:id', video.deleteVideo);
+app.delete('/track/:id', track.deleteTrack);
 
 
 
