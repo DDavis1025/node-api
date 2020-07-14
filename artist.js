@@ -42,11 +42,12 @@ const getFollowedByFollowerID = (request, response) => {
 }
 
 const deleteFollowing = (request, response) => {
-  const id = request.params.id;
+  const user_id = request.params.user_id;
+  const follower_id = request.params.follower_id;
   
-  db.pool.query('DELETE FROM user_followers WHERE user_id = $1', [id])
+  db.pool.query('DELETE FROM user_followers WHERE user_id = $1 AND follower_id = $2', [user_id, follower_id])
  .then((result) => {
- response.status(200).send({ message: `DELETED following with id ${id}` });
+ response.status(200).send({ message: `DELETED following with user_id ${user_id} and follower_id ${follower_id}` });
     
  }).catch((err)=>{console.log(err)})
 }

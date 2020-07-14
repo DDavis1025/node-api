@@ -10,6 +10,7 @@ const artist = require('./artist')
 const query = require('./query');
 const video = require('./video');
 const track = require('./track');
+const comment = require('./comments');
 const port = 8000;
 var multer = require('multer');
 
@@ -80,9 +81,18 @@ app.get('/videos', video.getAllVideos);
 app.get('/video_path/:id', video.getVideoPathByID);
 app.get('/tracks', track.getAllTracks);
 app.get('/trackAndImage/:id', track.trackPathAndImageByID);
+app.get('/comments/:id', comment.getCommentsByMediaId);
+app.get('/subComments/:id', comment.getSubCommentsByParentId);
+app.get('/commentLikes/:id', comment.getCommentLikesByCommentID);
+app.get('/commentLikesByUserID/:comment_id/:user_id', comment.getCommentLikesByUserID);
 // app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
+app.post('/comment', comment.addData)
+app.post('/sub_comment', comment.addSubComment)
+app.post('/addCommentLike', comment.addCommentLike)
+app.post('/subCommentLike/:id', comment.updateSubCommentIsLiked)
+
 // app.get('/albums/:id/songs', apiCall.selectSongs);
 // app.post('/albums/', apiCall.addData);
 app.post('/albums/:id', upload, apiCall.upsertAlbum);
@@ -100,9 +110,10 @@ app.post('/track', upload, track.addData);
 // app.put('/albums', apiCall.addData);
 app.delete('/albums/:id/songs', apiCall.deleteSongs);
 app.delete('/albums/:id/', apiCall.deleteAll);
-app.delete('/following/:id', artist.deleteFollowing);
+app.delete('/following/:user_id/:follower_id', artist.deleteFollowing);
 app.delete('/video/:id', video.deleteVideo);
 app.delete('/track/:id', track.deleteTrack);
+app.delete('/deleteCommentLike/:comment_id/:user_id', comment.deleteCommentLike);
 
 
 
