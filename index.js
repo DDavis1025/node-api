@@ -11,6 +11,7 @@ const query = require('./query');
 const video = require('./video');
 const track = require('./track');
 const comment = require('./comments');
+const notification = require('./notifications')
 const port = 8000;
 var multer = require('multer');
 
@@ -85,6 +86,10 @@ app.get('/comments/:id', comment.getCommentsByMediaId);
 app.get('/subComments/:id', comment.getSubCommentsByParentId);
 app.get('/commentLikes/:id', comment.getCommentLikesByCommentID);
 app.get('/commentLikesByUserID/:comment_id/:user_id', comment.getCommentLikesByUserID);
+app.get('/singleComment/:id/:user_id', comment.addedComment);
+app.get('/commentByUser/:id/:user_id', comment.getCommentsByUser);
+app.get('/getNotications/:id', notification.getNoticationsByUser);
+app.get('/getPostImage/:id', notification.getPostImageById);
 // app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
@@ -114,6 +119,8 @@ app.delete('/following/:user_id/:follower_id', artist.deleteFollowing);
 app.delete('/video/:id', video.deleteVideo);
 app.delete('/track/:id', track.deleteTrack);
 app.delete('/deleteCommentLike/:comment_id/:user_id', comment.deleteCommentLike);
+app.delete('/deleteComment/:comment_id/:user_id', comment.deleteComment);
+app.delete('/deleteSubComment/:comment_id/:user_id', comment.deleteSubComment);
 
 
 
