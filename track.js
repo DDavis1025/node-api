@@ -9,7 +9,6 @@ let track_id;
      var fields = JSON.parse(request.body.fields);
      let author_id = fields.user_id;
 
-     console.log(JSON.stringify(request.body))
 
      db.pool.query(
      	'INSERT INTO fields (title, date, description, author, type, id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *' ,
@@ -22,14 +21,12 @@ let track_id;
         'INSERT INTO track (path, id, author) VALUES ($1, $2, $3) RETURNING *',
         [request.files.track[0].path, track_id, author_id]);
   }).then(results => {
-         console.log(results.rows)
   }).then(() => {
       return db.pool.query(
         'INSERT INTO track_images (path, id, author) VALUES ($1, $2, $3) RETURNING *',
         [request.files.file[0].path, track_id, author_id]);
   }).then(results => {
   	     response.status(200).send({ message: "Success: Added track" });
-         console.log(results.rows)
   }).catch(error => console.log(error));
 
 }
@@ -42,7 +39,7 @@ const getTrackByID = (request, response) => {
   db.pool.query('SELECT * FROM fields WHERE id = $1', [id])
     .then( results => {
         fieldRows = results.rows;
-        console.log(fieldRows);
+        
         return db.pool.query('SELECT * FROM track WHERE id = $1', [id]);
     })
     .then( results => {
@@ -53,7 +50,6 @@ const getTrackByID = (request, response) => {
        track_images = results.rows;
        all = fieldRows.concat(trackRows, track_images);
        response.status(200).json(all);
-       console.log("Got Track By id")
     }).catch(error => console.log(error));
 
 }
@@ -66,10 +62,10 @@ const updateTrackByID = (request, response) => {
   db.pool.query('SELECT * FROM fields WHERE title = $1 AND date = $2 AND description = $3 AND id = $4', 
     [fields.title, fields.date, fields.description, id])
      .then((result)=> {
-        if (result.rowCount > 0){
-           console.log("fields result.rowCount > 0")
+        if (result.rowCount > 0) {
+
          } else {
-           console.log("update fields")
+          
            db.pool.query(
           'UPDATE fields SET title = $1, date = $2, description = $3 WHERE id = $4', 
            [fields.title, fields.date, fields.description, id])
@@ -78,7 +74,7 @@ const updateTrackByID = (request, response) => {
        return db.pool.query('SELECT * FROM track_images WHERE id = $1', 
        [id])
       }).then((result) => {
-          console.log("result path " + result.rows[0].path)
+          
           fs.unlinkSync(path.join(__dirname, result.rows[0].path))
           db.pool.query(
            'UPDATE track_images SET path = $1 WHERE id = $2', 
@@ -135,7 +131,6 @@ const getAllTracks = (request, response) => {
 
     .then(results => {
       response.status(200).json(results.rows)
-      console.log('+SELECT * FROM albums and file INNER JOIN by id')
     }).catch(error => console.log(error));
 }
 
@@ -159,6 +154,16 @@ const trackPathAndImageByID = (request, response) => {
 }
 
 
+const getTrackAuthor = (request, response) => {
+  const id = request.params.id;
+
+  db.pool.query('SELECT author FROM track WHERE id = $1',
+    [id])
+    .then(results => {
+      response.status(200).json(results.rows)
+    }).catch(error => console.log(error));
+}
+
 
 
 module.exports = {
@@ -168,5 +173,6 @@ module.exports = {
   deleteTrack,
   trackByArtistID,
   getAllTracks,
-  trackPathAndImageByID
+  trackPathAndImageByID,
+  getTrackAuthor
 }

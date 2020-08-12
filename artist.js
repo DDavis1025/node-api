@@ -12,12 +12,16 @@ const getArtistByID = (request, response) => {
 }
 
 const addFollower = (request, response) => {
-    db.pool.query('INSERT INTO user_followers (user_id, follower_id) VALUES ($1, $2) RETURNING *' , [request.body.user_id, request.body.follower_id])
+    db.pool.query('INSERT INTO user_followers (user_id, follower_id) VALUES ($1, $2) RETURNING *', 
+      [request.body.user_id, request.body.follower_id])
     .then(results => {
-      console.log(`results.rows ${JSON.stringify(results.rows)}`)
-      console.log(`request.body ${JSON.stringify(request.body)}`)
-      response.status(200).send({ message: `Success: Added Follower ${JSON.stringify(results.rows)}`});
-    }).catch(error => console.log(error));
+      let message = "started following you"
+      return db.pool.query(
+        'INSERT INTO notifications (user_id, supporter_id, supporter_username, supporter_picture, message) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+         [request.body.user_id, request.body.follower_id, request.body.follower_username, request.body.follower_picture, message])
+      }).then(()=> {
+      response.status(200).send({ message: `Success: Added Follower`});
+     }).catch(error => console.log(error));
 
 }
 
@@ -46,9 +50,12 @@ const deleteFollowing = (request, response) => {
   const follower_id = request.params.follower_id;
   
   db.pool.query('DELETE FROM user_followers WHERE user_id = $1 AND follower_id = $2', [user_id, follower_id])
- .then((result) => {
- response.status(200).send({ message: `DELETED following with user_id ${user_id} and follower_id ${follower_id}` });
-    
+ .then((results) => {
+    let message = "started following you"
+    db.pool.query('DELETE FROM notifications WHERE user_id = $1 AND supporter_id = $2 AND message = $3', 
+    [user_id, follower_id, message])
+   }).then((results)=> {
+   response.status(200).send({ message: `DELETED following with user_id ${user_id} and follower_id ${follower_id}` });
  }).catch((err)=>{console.log(err)})
 }
 

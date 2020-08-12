@@ -90,6 +90,16 @@ app.get('/singleComment/:id/:user_id', comment.addedComment);
 app.get('/commentByUser/:id/:user_id', comment.getCommentsByUser);
 app.get('/getNotications/:id', notification.getNoticationsByUser);
 app.get('/getPostImage/:id', notification.getPostImageById);
+app.get('/getSongData/:id', notification.getAlbumSongData);
+app.get('/getSubCommentsNotications/:id/:second_id', notification.getSubCommentNotificationByIDs);
+app.get('/getSubCommentsNoticationsById/:id', notification.getSubCommentNotificationByID);
+app.get('/getComment/:id', comment.getCommentById);
+app.get('/getParentSubCommentAndReply/:reply_id/:parent_subID', notification.getParentSubCommentAndReply);
+app.get('/postLikeByUserID/:post_id/:supporter_id', query.getPostLikeByUser);
+app.get('/getLikesByPostID/:post_id', query.getLikesByPostID);
+app.get('/getTrackAuthor/:id', track.getTrackAuthor);
+app.get('/getByPostID/:id', notification.getPostById);
+app.get('/getAuthorByPostID/:id', comment.getAuthorByPostId);
 // app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
@@ -97,6 +107,8 @@ app.post('/comment', comment.addData)
 app.post('/sub_comment', comment.addSubComment)
 app.post('/addCommentLike', comment.addCommentLike)
 app.post('/subCommentLike/:id', comment.updateSubCommentIsLiked)
+app.post('/postSubCommentNoticationIDs/:id/:second_id', notification.getSubCommentNotificationByIDs);
+app.post('/postLike/', query.addPostLike);
 
 // app.get('/albums/:id/songs', apiCall.selectSongs);
 // app.post('/albums/', apiCall.addData);
@@ -121,6 +133,7 @@ app.delete('/track/:id', track.deleteTrack);
 app.delete('/deleteCommentLike/:comment_id/:user_id', comment.deleteCommentLike);
 app.delete('/deleteComment/:comment_id/:user_id', comment.deleteComment);
 app.delete('/deleteSubComment/:comment_id/:user_id', comment.deleteSubComment);
+app.delete('/deletePostLike/:post_id/:supporter_id', query.deletePostLike);
 
 
 
