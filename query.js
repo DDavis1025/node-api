@@ -1,4 +1,6 @@
 const db = require('./queries');
+var comments = require('./comments');
+
 
 const getAll = (request, response) => {
 
@@ -29,33 +31,53 @@ const getAllByID = (request, response) => {
 }
 
 
-const addPostLike = (request, response) => {
+const addPostLike = async (request, response) => {
     let like = request.body;
     let postLikeRows, notificationRows, all;
+    let album, track, video;
+    let songResult, albumResult;
+    let message;
 
-    db.pool.query(
+    try {
+    const insertLikeResult = await db.pool.query(
         'INSERT INTO post_likes (post_id, user_id, type) VALUES ($1, $2, $3) RETURNING *',
          [like.post_id, like.supporter_id, like.type])
-    .then(results => {
-        let message = "liked your post"
-        postLikeRows = results.rows
+         postLikeRows = insertLikeResult.rows
       if (like.user_id != like.supporter_id) {
-        return db.pool.query(
-        'INSERT INTO notifications (supporter_id, supporter_username, supporter_picture, user_id, post_id, message) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-         [like.supporter_id, like.supporter_username, like.supporter_picture, like.user_id, like.post_id, message])
-    .then((results)=> {
-        notificationRows = results.rows
-        all = postLikeRows.concat(notificationRows);
-        response.status(200).json(all);
-    }).catch((err)=> {
-        console.log(err)
-     })
-     } else {
+        if (like.post_type == "album") {
+          const songResult = await db.pool.query('SELECT name, album_id FROM songs WHERE id = $1',
+          [like.post_id])
+          const track = songResult.rows[0].name
+          const albumResult = await db.pool.query('SELECT title FROM albums WHERE id = $1',
+          [songResult.rows[0].album_id])
+          const album = albumResult.rows[0].title
+
+          message = `liked your track "${track}", for album "${album}"`
+        } else if (like.post_type == "track") {
+          const trackResult = await db.pool.query('SELECT title FROM fields WHERE id = $1',
+          [like.post_id])
+          const track = trackResult.rows[0].title
+          message = `liked your track "${track}"`
+        } else if (like.post_type == "video") {
+          const videoResult = await db.pool.query('SELECT title FROM fields WHERE id = $1',
+          [like.post_id])
+          const video = videoResult.rows[0].title
+          message = `liked your video "${video}"`
+        } 
+
+        const postImageResult = await comments.getPostImage(like.post_id)
+        const insertNotifResult = await db.pool.query(
+        'INSERT INTO notifications (supporter_id, supporter_username, supporter_picture, user_id, post_id, message, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+         [like.supporter_id, like.supporter_username, like.supporter_picture, like.user_id, like.post_id, message, postImageResult.rows[0].path, like.post_type])
+         notificationRows = insertNotifResult.rows
+         all = postLikeRows.concat(notificationRows);
+         response.status(200).json(all);
+      } else {
         response.status(200).json(postLikeRows);
-     }
-     }).catch((err)=> {
-        console.log(err)
-     })
+      }
+    } catch(err) {
+     console.log(err)
+    }
 }
 
 
@@ -69,11 +91,14 @@ const deletePostLike = (request, response) => {
         'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2',
          [post_id, supporter_id])
     .then(results => {
-        let message = "liked your post"
+        let video = "video"
+        let track = "track"
+        let album = "album"
         return db.pool.query(
-        'DELETE FROM notifications WHERE post_id = $1 AND supporter_id = $2 AND message = $3',
-         [post_id, supporter_id, message])
+        'DELETE FROM notifications WHERE post_id = $1 AND supporter_id = $2 AND (post_type = $3 OR post_type = $4 OR post_type = $5)',
+         [post_id, supporter_id, video, track, album])
      }).then(()=> {
+        console.log("Deleted from notifiations")
         response.status(200).send({ message: "Success: DELETED post like" });
     }).catch((err)=> {
         console.log(err)

@@ -34,65 +34,6 @@ const addData = async (request, response) => {
 
 }
 
-// const addSubComment = (request, response) => {
-//     const uuid = uuidv4();
-//     let comments = request.body;
-//     let comment_id;
-//     let post_image;
-//     let subCommentRows, notificationRows, all;
-
-//     db.pool.query(
-//         'INSERT INTO sub_comments (id, post_id, username, user_picture, user_id, text, parent_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-//          [uuid, comments.post_id, comments.username, comments.user_picture, comments.user_id, comments.text, comments.parent_id])
-//     .then((results) => {
-//          subCommentRows = results.rows
-//          comment_id = results.rows[0].id;
-//          let message = `replied to your comment: ${comments.text}`
-//       if (comments.user_id != comments.comment_userID) {
-//        if (comments.parent_id != null && comments.parentsubcommentid == null) {
-//         //ADD post_image//
-//         getPostImage(comments.post_id, post_image)
-//         .then((value)=> {
-//         console.log(`post_image 2 ${value}`)
-//         return db.pool.query(
-//         'SELECT text FROM comments WHERE id = $1 ORDER BY time_added DESC',
-//         [comments.parent_id])
-//         }).then((results) => {
-//         return db.pool.query(
-//         'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
-//         [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, results.rows[0].text, post_image])
-//      }).then((results)=> {
-//         notificationRows = results.rows
-//         all = subCommentRows.concat(notificationRows);
-//         response.status(200).json(all);
-//      }).catch((err) => {
-//         console.log(err)
-//      })
-//      } else if (comments.parentsubcommentid) {
-//         getPostImage(comments.post_id, post_image)
-//        .then(()=> {
-//          return db.pool.query(
-//          'SELECT text FROM sub_comments WHERE id = $1 ORDER BY time_added DESC',
-//          [comments.parentsubcommentid])
-//          }).then((results) => {
-//             return db.pool.query(
-//             'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
-//              [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, results.rows[0].text, post_image])
-//          }).then((results)=> {
-//              notificationRows = results.rows
-//              all = subCommentRows.concat(notificationRows);
-//              response.status(200).json(all);
-//         }).catch((err) => {
-//         console.log(err)
-//      })
-//       }
-//  } else {
-//     response.status(200).json(subCommentRows);
-//  }
-//  }).catch((err) => {
-//         console.log(err)
-//      })
-// }
 
 const addSubComment = async (request, response) => {
     const uuid = uuidv4();
@@ -127,7 +68,7 @@ const addSubComment = async (request, response) => {
          'SELECT text FROM sub_comments WHERE id = $1 ORDER BY time_added DESC',
          [comments.parentsubcommentid])
         const insertResults = await db.pool.query (
-            'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+            'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
              [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, commentTextResults.rows[0].text, imageResults.rows[0].path])
              notificationRows = insertResults.rows
              all = subCommentRows.concat(notificationRows);
@@ -169,55 +110,45 @@ const getSubCommentsByParentId = (request, response) => {
     })
 }
 
-const addCommentLike = (request, response) => {
+const addCommentLike = async (request, response) => {
     let like = request.body;
     let commentLikeRows, notificationRows, all;
 
-    db.pool.query(
+    try {
+    let insertLikesResult = await db.pool.query(
         'INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2) RETURNING *',
          [like.comment_id, like.user_id])
-    .then(results => {
         let message = "liked your comment"
-        commentLikeRows = results.rows
+        commentLikeRows = insertLikesResult.rows
       if (like.user_id != like.comment_userID) {
-        db.pool.query(
+        let postImageResults = await getPostImage(like.post_id)
+        let commentTextResult = await db.pool.query(
         'SELECT text FROM comments WHERE id = $1',
         [like.comment_id]) 
-       .then((results) => {
-        if (results.rowCount > 0) {
-         return db.pool.query(
-        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, results.rows[0].text])
-        .then((results)=> {
-        notificationRows = results.rows
+        if (commentTextResult.rowCount > 0) {
+         const insertNotifResult = await db.pool.query(
+        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, commentTextResult.rows[0].text, postImageResults.rows[0].path])
+        notificationRows = insertNotifResult.rows
         all = commentLikeRows.concat(notificationRows);
         response.status(200).json(all);
-        }).catch((err)=> {
-        console.log(err)
-        })
        } else {
-        db.pool.query(
+        const subCommentTextResult = await db.pool.query(
         'SELECT text FROM sub_comments WHERE id = $1',
         [like.comment_id]) 
-       .then((results) => {
-         return db.pool.query(
-        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, results.rows[0].text])
-       }).then((results)=> {
-        notificationRows = results.rows
+         const insertNotifResult = await db.pool.query(
+        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, subCommentTextResult.rows[0].text, postImageResults.rows[0].path])
+        notificationRows = insertNotifResult.rows
         all = commentLikeRows.concat(notificationRows);
         response.status(200).json(all);
-        }).catch((err)=> {
-        console.log(err)
-        })
        }
-      })
      } else {
         response.status(200).json(commentLikeRows);
      }
-     }).catch((err)=> {
-        console.log(err)
-     })
+ } catch(err) {
+    console.log(err)
+ }
 }
 
 const deleteCommentLike = (request, response) => {
@@ -338,7 +269,11 @@ const deleteComment = (request, response) => {
     db.pool.query(
         'DELETE FROM comments WHERE id = $1 AND user_id = $2',
          [comment_id, user_id])
-    .then(results => {
+    .then(() => {
+        return db.pool.query(
+        'DELETE FROM notifications WHERE comment_id = $1 AND supporter_id = $2 AND MESSAGE::text LIKE $3',
+        [comment_id, user_id, 'commented%'])
+     }).then(() => {
          response.status(200).send({ message: "Success: DELETED comment" });
      }).catch((err)=> {
         console.log(err)
@@ -354,8 +289,8 @@ const deleteSubComment = (request, response) => {
          [comment_id, user_id])
     .then(() => {
         return db.pool.query(
-        'DELETE FROM notifications WHERE comment_id = $1 AND supporter_id = $2',
-         [comment_id, user_id])
+        'DELETE FROM notifications WHERE comment_id = $1 AND supporter_id = $2 AND MESSAGE::text LIKE $3',
+         [comment_id, user_id, 'replied%'])
      }).then(()=> {
         response.status(200).send({ message: "Success: DELETED sub comment" });
      }).catch((err)=> {
@@ -438,7 +373,7 @@ async function getPostImage(post_id) {
             if (trackResults.rowCount <= 0) {
                 let videoResults = await db.pool.query(
                'SELECT path FROM video_thumbnails WHERE id = $1', 
-                [comments.post_id])
+                [post_id])
                 return videoResults
              } else {
                 return trackResults
@@ -479,6 +414,7 @@ module.exports = {
   deleteComment,
   deleteSubComment,
   getCommentById,
-  getAuthorByPostId
+  getAuthorByPostId,
+  getPostImage
 
 }
