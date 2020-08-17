@@ -123,6 +123,20 @@ const getUserImageByID = (request, response) => {
     }).catch(error => console.log(error));
 }
 
+
+const getFollower = async (request, response) => {
+    const user_id = request.params.user_id;
+    const follower_id = request.params.follower_id
+    try {
+      let followResult = await db.pool.query('SELECT * FROM user_followers WHERE user_id = $1 AND follower_id = $2', 
+      [user_id, follower_id])
+      response.status(200).json(followResult.rows)
+    } catch(err) {
+       console.log(err)
+    }
+}
+
+
 module.exports = {
    getArtistByID,
    addFollower,
@@ -131,5 +145,6 @@ module.exports = {
    uploadImage,
    upsertUserImage,
    getUserImageByID,
-   deleteFollowing
+   deleteFollowing,
+   getFollower
 }

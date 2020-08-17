@@ -68,7 +68,7 @@ const addPostLike = async (request, response) => {
         const postImageResult = await comments.getPostImage(like.post_id)
         const insertNotifResult = await db.pool.query(
         'INSERT INTO notifications (supporter_id, supporter_username, supporter_picture, user_id, post_id, message, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-         [like.supporter_id, like.supporter_username, like.supporter_picture, like.user_id, like.post_id, message, postImageResult.rows[0].path, like.post_type])
+         [like.supporter_id, like.supporter_username, like.supporter_picture, like.user_id, like.post_id, message, postImageResult.rows[1].path, like.post_type])
          notificationRows = insertNotifResult.rows
          all = postLikeRows.concat(notificationRows);
          response.status(200).json(all);
