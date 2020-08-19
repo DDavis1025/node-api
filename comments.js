@@ -18,8 +18,8 @@ const addData = async (request, response) => {
       if (comments.user_id != comments.post_user_id) {
          let postImageResults = await getPostImage(comments.post_id)
          let insertNotificationsResults = await db.pool.query(
-        'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, user_id, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-         [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.post_user_id, postImageResults.rows[1].path, postImageResults.rows[0].type])
+        'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, user_id, post_image, post_type, new) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+         [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.post_user_id, postImageResults.rows[1].path, postImageResults.rows[0].type, true])
 
           notificationRows = insertNotificationsResults.rows
           all = mainCommentRows.concat(notificationRows);
@@ -57,8 +57,8 @@ const addSubComment = async (request, response) => {
         'SELECT text FROM comments WHERE id = $1 ORDER BY time_added DESC',
         [comments.parent_id])
         const insertResults = await db.pool.query(
-        'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-        [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, commentTextResults.rows[0].text, imageResults.rows[1].path, imageResults.rows[0].type])
+        'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image, post_type, new) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
+        [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, commentTextResults.rows[0].text, imageResults.rows[1].path, imageResults.rows[0].type, true])
         notificationRows = insertResults.rows
         all = subCommentRows.concat(notificationRows);
         response.status(200).json(all);    
@@ -68,8 +68,8 @@ const addSubComment = async (request, response) => {
          'SELECT text FROM sub_comments WHERE id = $1 ORDER BY time_added DESC',
          [comments.parentsubcommentid])
         const insertResults = await db.pool.query (
-            'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
-             [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, commentTextResults.rows[0].text, imageResults.rows[1].path, imageResults.rows[0].type])
+            'INSERT INTO notifications (comment_id, post_id, supporter_id, supporter_username, supporter_picture, message, parent_commentid, user_id, tableview_index, parentsubcommentid, parent_comment, post_image, post_type, new) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING *',
+             [comment_id, comments.post_id, comments.user_id, comments.username, comments.user_picture, message, comments.parent_id, comments.comment_userID, comments.tableview_index, comments.parentsubcommentid, commentTextResults.rows[0].text, imageResults.rows[1].path, imageResults.rows[0].type, true])
              notificationRows = insertResults.rows
              all = subCommentRows.concat(notificationRows);
              response.status(200).json(all);
@@ -112,7 +112,7 @@ const getSubCommentsByParentId = (request, response) => {
 
 const addCommentLike = async (request, response) => {
     let like = request.body;
-    let commentLikeRows, notificationRows, all;
+    let commentRows, commentLikeRows, notificationRows, all;
 
     try {
     let insertLikesResult = await db.pool.query(
@@ -120,6 +120,15 @@ const addCommentLike = async (request, response) => {
          [like.comment_id, like.user_id])
         let message = "liked your comment"
         commentLikeRows = insertLikesResult.rows
+
+    let selectLikesCommentsResult = await db.pool.query(
+        'SELECT likes FROM comments WHERE id = $1',
+         [like.comment_id])
+    let likes = selectLikesCommentsResult.rows[0].likes + 1
+    let updateLikesCommentsResult = await db.pool.query(
+        'UPDATE comments SET likes = $1 WHERE id = $2',
+         [likes, like.comment_id])
+        commentRows = updateLikesCommentsResult.rows
       if (like.user_id != like.comment_userID) {
         let postImageResults = await getPostImage(like.post_id)
         let commentTextResult = await db.pool.query(
@@ -127,8 +136,8 @@ const addCommentLike = async (request, response) => {
         [like.comment_id]) 
         if (commentTextResult.rowCount > 0) {
          const insertNotifResult = await db.pool.query(
-        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, commentTextResult.rows[0].text, postImageResults.rows[1].path, postImageResults.rows[0].type])
+        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image, post_type, new) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, commentTextResult.rows[0].text, postImageResults.rows[1].path, postImageResults.rows[0].type, true])
         notificationRows = insertNotifResult.rows
         all = commentLikeRows.concat(notificationRows);
         response.status(200).json(all);
@@ -137,39 +146,52 @@ const addCommentLike = async (request, response) => {
         'SELECT text FROM sub_comments WHERE id = $1',
         [like.comment_id]) 
          const insertNotifResult = await db.pool.query(
-        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image, post_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, subCommentTextResult.rows[0].text, postImageResults.rows[1].path, postImageResults.rows[0].type])
+        'INSERT INTO notifications (comment_id, parent_commentid, supporter_id, supporter_username, supporter_picture, user_id, post_id, message, parent_comment, post_image, post_type, new) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+         [like.comment_id, like.parent_id, like.user_id, like.username, like.user_picture, like.comment_userID, like.post_id, message, subCommentTextResult.rows[0].text, postImageResults.rows[1].path, postImageResults.rows[0].type, true])
         notificationRows = insertNotifResult.rows
-        all = commentLikeRows.concat(notificationRows);
+        all = commentLikeRows.concat(notificationRows, commentRows);
         response.status(200).json(all);
        }
      } else {
-        response.status(200).json(commentLikeRows);
+        all = commentLikeRows.concat(commentRows);
+        response.status(200).json(all);
      }
  } catch(err) {
     console.log(err)
  }
 }
 
-const deleteCommentLike = (request, response) => {
+const deleteCommentLike = async (request, response) => {
     let like = request.body;
     let comment_id = request.params.comment_id;
     let user_id = request.params.user_id;
 
     console.log("comment_id" + comment_id + "user_id" + user_id)
-    db.pool.query(
+    try {
+         await db.pool.query(
         'DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2',
          [comment_id, user_id])
-    .then(results => {
+
+         let selectLikesCommentsResult = await db.pool.query(
+        'SELECT likes FROM comments WHERE id = $1',
+         [comment_id])
+         let likes = selectLikesCommentsResult.rows[0].likes - 1
+         if (selectLikesCommentsResult.rows[0].likes > 0) {
+         await db.pool.query(
+        'UPDATE comments SET likes = $1 WHERE id = $2',
+         [likes, comment_id])
+         }
+
+
         let message = "liked your comment"
-        return db.pool.query(
+        await db.pool.query(
         'DELETE FROM notifications WHERE comment_id = $1 AND supporter_id = $2 AND message = $3',
          [comment_id, user_id, message])
-     }).then(()=> {
+        
         response.status(200).send({ message: "Success: DELETED comment like" });
-    }).catch((err)=> {
+    } catch(err) {
         console.log(err)
-     })
+    }
 }
 
 const getCommentLikesByCommentID = (request, response) => {
@@ -198,6 +220,19 @@ const getCommentLikesByUserID = (request, response) => {
     }).catch((err) => {
         console.log(err)
     })
+}
+
+const getCommentLikes = async (request, response) => {
+    let comment_id = request.params.comment_id;
+
+    try {
+    let commentLikesResult = await db.pool.query(
+        'SELECT likes FROM comments WHERE id = $1',
+        [comment_id])
+        response.status(200).json(commentLikesResult.rows)
+    } catch(err) {
+        console.log(err)
+    }
 }
 
 
@@ -418,6 +453,6 @@ module.exports = {
   deleteSubComment,
   getCommentById,
   getAuthorByPostId,
-  getPostImage
-
+  getPostImage,
+  getCommentLikes
 }

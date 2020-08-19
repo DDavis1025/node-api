@@ -1,14 +1,18 @@
 const db = require('./queries');
 
-const getNoticationsByUser = (request, response) => {
+const getNoticationsByUser = async (request, response) => {
     const id = request.params.id;
-
-    db.pool.query(
+     
+    try {
+    let notificationResults = await db.pool.query(
         'SELECT * FROM notifications WHERE user_id = $1 ORDER BY time_added DESC', 
         [id])
-    .then((results) => {
-        response.status(200).json(results.rows)
-    }).catch(error => console.log(error));
+        response.status(200).json(notificationResults.rows)
+       db.pool.query(
+        'UPDATE notifications SET new = null')
+    } catch(err) {
+      console.log(err)
+    }
 }
 
 const getPostImageById = (request, response) => {

@@ -17,8 +17,8 @@ const addFollower = (request, response) => {
     .then(results => {
       let message = "started following you"
       return db.pool.query(
-        'INSERT INTO notifications (user_id, supporter_id, supporter_username, supporter_picture, message) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-         [request.body.user_id, request.body.follower_id, request.body.follower_username, request.body.follower_picture, message])
+        'INSERT INTO notifications (user_id, supporter_id, supporter_username, supporter_picture, message, new) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+         [request.body.user_id, request.body.follower_id, request.body.follower_username, request.body.follower_picture, message, true])
       }).then(()=> {
       response.status(200).send({ message: `Success: Added Follower`});
      }).catch(error => console.log(error));

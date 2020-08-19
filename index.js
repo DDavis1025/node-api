@@ -101,6 +101,7 @@ app.get('/getTrackAuthor/:id', track.getTrackAuthor);
 app.get('/getByPostID/:id', notification.getPostById);
 app.get('/getAuthorByPostID/:id', comment.getAuthorByPostId);
 app.get('/getFollower/:user_id/:follower_id', artist.getFollower);
+app.get('/getCommentLikes/:comment_id/', comment.getCommentLikes);
 // app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
