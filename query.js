@@ -129,15 +129,23 @@ const getLikesByPostID = (request, response) => {
     }).catch(error => console.log(error));
 }
 
+const tokenRequest = (error, response, body) => {
+  if (error) throw new Error(error);
+
+  console.log(body);
+};
+
+
 
 
 
 
  module.exports = {
+  tokenRequest,
  	getAll,
  	getAllByID,
   addPostLike,
   deletePostLike,
   getPostLikeByUser,
-  getLikesByPostID
+  getLikesByPostID,
  }

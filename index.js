@@ -14,7 +14,27 @@ const comment = require('./comments');
 const notification = require('./notifications')
 const port = 8000;
 var multer = require('multer');
+var jwt = require('express-jwt');
+var jwks = require('jwks-rsa');
 
+
+// var jwtCheck = jwt({
+//   secret: jwks.expressJwtSecret({
+//     cache: true,
+//     rateLimit: true,
+//     jwksRequestPerMinute: 5,
+//     jwksUri: 'https://dev-owihjaep.auth0.com/.well-known/jwks.json'
+//   }),
+//   audience: 'https://dillonsapi.com',
+//   issuer: 'https://dev-owihjaep.auth0.com/',
+//   algorithms: ['RS256']
+// });
+
+// app.use(jwtCheck);
+
+app.get('/authorized', function (req, res) {
+    res.send('Secured Resource');
+});
 
 var storage = multer.diskStorage({
 	destination: (req, file, cb) => {
@@ -68,6 +88,8 @@ app.get('/songs/:id', db.getSongById);
 
 //ALBUMS ROUTES
 // app.get('/albums', album.getAlbums)
+
+
 app.get('/albums', query.getAll);
 app.get('/albums/:id', query.getAllByID);
 app.get('/artist/:id', artist.getArtistByID);
@@ -102,6 +124,7 @@ app.get('/getByPostID/:id', notification.getPostById);
 app.get('/getAuthorByPostID/:id', comment.getAuthorByPostId);
 app.get('/getFollower/:user_id/:follower_id', artist.getFollower);
 app.get('/getCommentLikes/:comment_id/', comment.getCommentLikes);
+app.get('/getNewNotifications/:id/', notification.getNewNoticationsByUser);
 // app.get('/test/:id', apiCall.testGet);
 app.post('/follower', artist.addFollower);
 app.post('/upload', upload, artist.upsertUserImage);
@@ -114,6 +137,8 @@ app.post('/postLike/', query.addPostLike);
 
 // app.get('/albums/:id/songs', apiCall.selectSongs);
 // app.post('/albums/', apiCall.addData);
+// app.post('/tokenRequest', options, query.tokenRequest);
+
 app.post('/albums/:id', upload, apiCall.upsertAlbum);
 app.put('/albums/:id', upload, apiCall.upsertAlbum);
 app.put('/video/:id', upload, video.updateVideoByID);

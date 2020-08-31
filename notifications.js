@@ -8,12 +8,28 @@ const getNoticationsByUser = async (request, response) => {
         'SELECT * FROM notifications WHERE user_id = $1 ORDER BY time_added DESC', 
         [id])
         response.status(200).json(notificationResults.rows)
-       db.pool.query(
-        'UPDATE notifications SET new = null')
     } catch(err) {
       console.log(err)
     }
 }
+
+const getNewNoticationsByUser = async (request, response) => {
+    const id = request.params.id;
+     
+    try {
+    let newNotificationsResult = await db.pool.query(
+        'SELECT new FROM notifications WHERE user_id = $1 AND new IS NOT NULL', 
+        [id])
+        await response.status(200).json(newNotificationsResult.rows)
+         db.pool.query(
+         'UPDATE notifications SET new = $1 WHERE user_id = $2',
+         [null, id])
+    } catch(err) {
+      console.log(err)
+    }
+}
+
+
 
 const getPostImageById = (request, response) => {
     const id = request.params.id;
@@ -180,5 +196,6 @@ module.exports = {
   getSubCommentNotificationByIDs,
   getSubCommentNotificationByID,
   getParentSubCommentAndReply,
-  getPostById
+  getPostById,
+  getNewNoticationsByUser
 }
